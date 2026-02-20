@@ -1,176 +1,375 @@
-# Prayer Presence App — Product Blueprint (iOS + Android, Flutter)
+# Prayer Presence App — Complete Plan (Flutter iOS + Android)
 
-## 1) Core idea (MVP)
-A location-based community app where a user can share **“I am praying now”** status.
+This document is the **full plan** for building your app idea:
+- A user can press **"I am praying now"**.
+- Nearby users get a notification (for example Asr).
+- Nearby users can see prayer activity on a map/list.
+- When prayer finishes, user goes offline and activity disappears.
 
-When a user starts praying:
-- Their status becomes **Active / Praying** for a selected prayer (Fajr, Dhuhr, Asr, Maghrib, Isha).
-- Nearby users can see that someone is praying now (with privacy-safe location sharing).
-- Optional notifications are sent to relevant nearby users.
+---
 
-When a user finishes:
-- Their status returns to **Offline / Finished**.
-- The praying indicator is removed from nearby users’ active view.
+## 1) Product Vision
+Create a trusted, privacy-first local Muslim community app where people can:
+- Share real-time prayer presence.
+- Discover nearby prayer activity.
+- Coordinate with local community/mosque/company groups.
 
-## 2) Clarified user stories
-1. As a user, I can set my location permissions and prayer preferences.
-2. As a user, I can tap **Start Prayer** and choose prayer type.
-3. As nearby user, I can receive “someone is praying now” notification.
-4. As nearby user, I can open a map/list and see active prayer sessions nearby.
-5. As praying user, I can tap **Finish Prayer** to stop broadcasting status.
-6. As user, I can control privacy (exact location, approximate location, hidden mode).
+### Core value
+- Encourage prayer through social motivation.
+- Build local community connection.
+- Respect privacy and safety by default.
 
-## 3) MVP feature scope (build first)
-### Authentication
-- Phone auth or email auth.
-- Basic profile: display name, optional avatar.
+---
 
-### Presence session
-- Start prayer session (type + optional duration timer).
-- Finish prayer session manually.
-- Auto-expire fallback (e.g., 30 minutes) in case user forgets to stop.
+## 2) User Types and Use Cases
 
-### Location + discovery
-- Request foreground location permission.
-- Share only approximate location by default (e.g., rounded geohash / map cell).
-- Show nearby active sessions in radius (e.g., 1–5 km configurable).
+### User type A: Individual community member
+- Wants to share "I am praying now".
+- Wants to know if others nearby are praying.
 
-### Notifications
-- Push notifications for nearby sessions matching user preferences.
-- Quiet hours / Do Not Disturb.
+### User type B: Community admin (future)
+- Wants insights on participation in a defined group (company/campus).
+- Wants moderation tools to keep platform safe.
 
-### Safety & abuse controls
-- Report/block users.
-- Rate limiting session starts.
-- Basic content moderation for profile fields.
+### Primary use cases
+1. User starts prayer session with one tap.
+2. Nearby eligible users receive notification.
+3. Nearby users open app and see active prayer sessions.
+4. User ends prayer session; session status becomes finished.
+5. Session auto-expires if user forgets to end.
 
-## 4) Non-functional requirements
-- Reliable real-time updates (<3 seconds typical).
-- Battery-efficient location usage (no continuous high-accuracy tracking for MVP).
-- GDPR-style data minimization and consent.
-- Scalable backend for city-level concurrency.
+---
 
-## 5) Recommended architecture (Flutter-first)
-### Mobile app
-- Flutter (single codebase for iOS + Android).
-- State management: Riverpod or Bloc.
-- Maps: Google Maps / Mapbox Flutter SDK.
-- Notification handling: Firebase Cloud Messaging.
+## 3) Feature Plan by Phase
 
-### Backend (practical MVP)
-- Firebase Authentication.
-- Cloud Firestore for user/session documents.
+## Phase 1 — MVP (first release)
+### Must-have
+- Sign up/login (phone or email).
+- User profile (name, optional photo).
+- Start prayer session (choose: Fajr, Dhuhr, Asr, Maghrib, Isha).
+- End prayer session.
+- Nearby sessions list + map view.
+- Push notifications for nearby sessions.
+- Basic privacy mode (approximate location only).
+- Auto-expire sessions (e.g., 30 min).
+
+### Nice-to-have in MVP
+- Session timer UI.
+- Quiet hours.
+- Prayer filters.
+
+## Phase 2 — Community launch
+- Group types (company, campus, mosque).
+- Invite-only community mode.
+- Role-based access (admin/member).
+- Reporting/blocking and moderation panel.
+- Better notification personalization.
+
+## Phase 3 — Scale and intelligence
+- Smart ranking of nearby relevant sessions.
+- Habit and consistency insights.
+- Multi-language localization.
+- Regional rollouts with policy/legal tuning.
+
+---
+
+## 4) App Flow (End-to-End)
+
+1. **Onboarding**
+   - Explain app purpose.
+   - Ask permissions (location + notifications).
+   - Set privacy defaults.
+
+2. **Home screen**
+   - Big primary CTA: **Start Prayer**.
+   - If active: show **Finish Prayer** + elapsed time.
+
+3. **Start Prayer flow**
+   - Select prayer type.
+   - Confirm location-sharing mode.
+   - Create active session.
+
+4. **Notification flow**
+   - Backend finds nearby users.
+   - Sends push: “Someone nearby is praying Asr now.”
+
+5. **Nearby screen**
+   - Map with coarse pins/areas.
+   - List cards with prayer type and active duration.
+
+6. **Finish Prayer flow**
+   - User taps finish.
+   - Session marked finished.
+   - User online prayer indicator removed.
+
+7. **Failure handling**
+   - If no internet: cache local event and sync later.
+   - If user exits app: auto-expire ensures cleanup.
+
+---
+
+## 5) Technical Architecture Plan
+
+### Mobile (Flutter)
+- Flutter app for iOS + Android.
+- State management: Riverpod (recommended).
+- Routing: go_router.
+- Maps: Google Maps SDK or Mapbox.
+- Notifications: Firebase Cloud Messaging.
+- Local storage: Hive/shared_preferences for lightweight caching.
+
+### Backend (Firebase-first MVP)
+- Firebase Auth.
+- Firestore for real-time data.
 - Cloud Functions for:
-  - geofence-like matching logic,
-  - sending push notifications,
-  - session auto-expiry cleanup.
-- Firebase Analytics + Crashlytics.
+  - proximity matching,
+  - notification dispatch,
+  - auto-expire scheduler/cleanup,
+  - abuse/rate-limit checks.
+- Crashlytics + Analytics.
 
-> Alternative: Supabase + Edge Functions + OneSignal (also valid).
+### Why Firebase first
+- Fast MVP delivery.
+- Realtime built-in.
+- Lower ops complexity early.
 
-## 6) Data model (example)
-### users
+---
+
+## 6) Data Model Plan
+
+## users
 - id
 - displayName
 - photoUrl
-- notificationSettings
-- privacyMode
-- homeRegion(optional)
+- trustLevel (optional)
+- privacyMode (`coarse`, `hidden`, `community-only`)
+- notificationPrefs (enabled prayers, radius, quiet hours)
+- blockedUsers[]
 - createdAt
 
-### prayer_sessions
+## communities (phase 2)
+- id
+- name
+- type (`company`, `campus`, `mosque`, `public`)
+- privacy (`invite-only`, `open`)
+- region
+- adminIds[]
+
+## prayer_sessions
 - id
 - userId
-- prayerType (fajr/dhuhr/asr/maghrib/isha)
-- status (active/finished/expired)
+- communityId (optional)
+- prayerType
+- status (`active`, `finished`, `expired`)
 - startedAt
 - endedAt
-- locationCell (coarse)
-- preciseLocation(optional, encrypted + access-controlled)
+- ttlAt
+- locationCell (coarse geohash)
+- latitudeApprox
+- longitudeApprox
 
-### notification_events
+## notification_events
 - id
 - sessionId
 - receiverUserId
 - sentAt
-- deliveryStatus
+- status (`sent`, `failed`, `opened`)
 
-## 7) Notification logic (simple MVP)
-Trigger when session starts:
-1. Find active users inside radius.
-2. Exclude blocked relationships.
-3. Respect receiver preferences (enabled prayers, quiet mode).
-4. Send push: “Someone nearby is praying Asr now.”
-5. Deep-link to nearby sessions screen.
+## reports
+- id
+- reporterId
+- targetUserId
+- reason
+- createdAt
+- status
 
-## 8) Privacy design (must-have)
-- Default to approximate location, not exact pin.
-- Optional “Masjid/Area only” visibility mode.
-- No background tracking unless explicitly needed and consented.
-- Clear consent screen explaining what is shared and when.
-- Auto-delete old sessions after retention window (e.g., 30 days).
+---
 
-## 9) Edge cases you should plan now
-- User starts session with no internet.
-- User forgets to end session.
-- Duplicate notifications.
-- False location/spam behavior.
-- Timezone and prayer-time calculation differences.
-- App killed in background while session active.
+## 7) Privacy, Safety, and Trust Plan
 
-## 10) 6-week implementation roadmap
-### Week 1
-- Product requirements + wireframes.
-- Firebase project setup + auth.
+### Privacy defaults
+- Share approximate location only by default.
+- Never show exact home/work addresses.
+- Allow hidden mode.
 
-### Week 2
-- Start/finish prayer session flow.
-- Session list screen.
+### Safety controls
+- Report user.
+- Block user.
+- Rate limit repeated session toggling.
+- Device/account abuse heuristics.
 
-### Week 3
-- Location permission + coarse location storage.
-- Nearby query screen.
+### Legal/compliance checklist
+- Clear consent for location and notifications.
+- Data retention policy (e.g., session logs auto-delete in 30 days).
+- Terms and Privacy Policy before public release.
 
-### Week 4
-- Cloud Function notification pipeline.
-- Notification preferences page.
+---
 
-### Week 5
-- Privacy modes + block/report.
-- Auto-expire and reliability fixes.
+## 8) Notification Strategy Plan
 
-### Week 6
-- QA, analytics events, crash fixes.
-- Beta release (TestFlight + Play Internal Testing).
+### Trigger condition
+When a user starts an active prayer session.
 
-## 11) UI screens for first release
-1. Onboarding + permissions
-2. Home (Start Prayer / Finish Prayer)
-3. Nearby Prayers (map + list)
-4. Session details
-5. Notification settings
-6. Privacy settings
-7. Profile + block/report management
+### Receiver selection
+- Inside radius (e.g., 2km default).
+- Same community if in private mode.
+- Not blocked by either party.
+- Notification settings allow this prayer type.
+- Respect quiet hours.
 
-## 12) KPI metrics for success
-- Daily Active Users (DAU)
-- Prayer session starts per day
-- Session completion rate (start -> finish)
-- Notification open rate
-- 7-day retention
+### Anti-spam policy
+- Cap notifications per user per hour.
+- Collapse duplicate events for same area/prayer.
 
-## 13) What to think about next (your missing points)
-- Who is your initial community? (single city, university, company campuses)
-- What is the trust model? (verified members only vs open public)
-- What visibility level is acceptable culturally and legally?
-- Do you need exact location at all, or only zone-level activity?
-- Should sessions be anonymous by default?
-- How will moderation work if abuse happens?
-- What is your launch strategy to avoid empty-network problem?
+---
 
-## 14) Suggested immediate next actions
-1. Validate with 10 target users (short interviews).
-2. Freeze MVP scope from sections 1–3.
-3. Build Flutter prototype screens before backend complexity.
-4. Implement Firebase MVP stack.
-5. Run 2-week pilot in one local community.
+## 9) UI/UX Plan (Screen List)
+
+1. Splash + Auth
+2. Onboarding + permission education
+3. Home (Start/Finish)
+4. Select prayer modal
+5. Nearby map
+6. Nearby list
+7. Session details
+8. Notification settings
+9. Privacy settings
+10. Profile
+11. Report/block UI
+12. Admin tools (phase 2)
+
+---
+
+## 10) Engineering Plan (12 Weeks)
+
+### Weeks 1–2: Foundation
+- Finalize requirements.
+- Setup Flutter project architecture.
+- Setup Firebase projects (dev/stage/prod).
+- Implement Auth + base navigation.
+
+### Weeks 3–4: Core session logic
+- Build start/finish prayer flow.
+- Implement `prayer_sessions` collection.
+- Add active-session home state.
+- Implement auto-expire logic.
+
+### Weeks 5–6: Location + Nearby
+- Permission flow for location.
+- Coarse geolocation write/read.
+- Nearby query logic and list UI.
+- Map integration.
+
+### Weeks 7–8: Notifications
+- Cloud Function for matching + sending.
+- FCM token lifecycle management.
+- Notification deeplinks.
+- Quiet hours + prayer filters.
+
+### Weeks 9–10: Safety + privacy hardening
+- Block/report flows.
+- Rate limiting.
+- Privacy settings and copy review.
+- Telemetry and analytics events.
+
+### Weeks 11–12: QA + launch prep
+- End-to-end tests and bug fixing.
+- Performance/battery checks.
+- TestFlight + Play Internal testing.
+- Release checklist and rollout.
+
+---
+
+## 11) QA and Testing Plan
+
+### Automated
+- Unit tests: session state, notification filter logic.
+- Widget tests: start/finish flow.
+- Integration tests: auth -> start prayer -> nearby visibility -> finish.
+
+### Manual
+- Permission denied scenarios.
+- Offline mode + resync.
+- App killed/reopened during active session.
+- Different timezone and locale checks.
+
+### Release gates
+- Crash-free sessions > 99% in beta.
+- No P0 privacy/security defects.
+- Notification success rate target achieved.
+
+---
+
+## 12) Metrics and Success Plan
+
+### Product KPIs
+- DAU / WAU.
+- Prayer sessions started/day.
+- Session completion rate.
+- Nearby screen opens.
+- Notification open rate.
+- D7 and D30 retention.
+
+### Community KPIs (phase 2)
+- Active communities count.
+- Community retention and growth.
+- Moderation incident rate.
+
+---
+
+## 13) Business and Launch Plan
+
+### Pilot strategy
+- Start with one city or one company/campus.
+- Recruit 50–200 beta users.
+- Weekly feedback loops.
+
+### Launch strategy
+- Launch only where community density is enough.
+- Partner with local mosques/community organizers.
+- Use invite-based growth before public listing.
+
+### Monetization options (later)
+- Community premium analytics.
+- Verified organization subscriptions.
+- Sponsored local community features (privacy-safe).
+
+---
+
+## 14) Critical Risks and Mitigations
+
+1. **Low activity (empty network)**
+   - Mitigation: launch in small dense communities first.
+
+2. **Privacy concerns**
+   - Mitigation: coarse location default + transparent controls.
+
+3. **Notification fatigue**
+   - Mitigation: quiet hours, frequency caps, preference filters.
+
+4. **Abuse/spam**
+   - Mitigation: report/block, throttling, moderation ops.
+
+5. **Battery/performance issues**
+   - Mitigation: no continuous high-accuracy tracking.
+
+---
+
+## 15) Full Action Checklist (What you do next)
+
+1. Freeze MVP scope (Phase 1 only).
+2. Choose stack: Flutter + Firebase.
+3. Build Figma wireframes for 10 MVP screens.
+4. Setup project and CI.
+5. Implement Auth + Home + Start/Finish flow.
+6. Add location and nearby list.
+7. Add notification pipeline.
+8. Add privacy/safety basics.
+9. Run 2-week pilot.
+10. Improve based on feedback.
+11. Prepare public release.
+
+---
+
+## 16) Simple One-Sentence Product Definition
+A privacy-first, location-based Flutter app where users can share real-time prayer presence, notify nearby community members, and automatically return offline when prayer ends.
