@@ -47,13 +47,8 @@ class PrayerPresenceController extends ChangeNotifier {
       isCurrentUser: true,
     );
 
-    final bool samePrayerExists = _nearbySessions.any(
-      (PrayerSession session) => session.prayerType == prayerType,
-    );
-
-    _lastNotification = samePrayerExists
-        ? 'You are now praying ${prayerType.label}. Nearby users were notified.'
-        : 'You are the first nearby praying ${prayerType.label}. Broadcast sent.';
+    _lastNotification =
+        'Demo only: your prayer session started. Nearby users were not notified.';
     notifyListeners();
   }
 
