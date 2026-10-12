@@ -126,7 +126,7 @@ class _PrayerPresenceHomePageState extends State<PrayerPresenceHomePage> {
               ],
               const SizedBox(height: 20),
               const Text(
-                'Nearby prayer activity',
+                'Nearby prayer activity (sample data)',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
